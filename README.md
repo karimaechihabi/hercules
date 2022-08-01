@@ -1,6 +1,6 @@
 # 1. Paper Information
 
-## Title: K. Echihabi, K. Zoumpatianos, T. Palpanas, and H. Benbrahim. Hercules Against Data Series Similarity Search. PVLDB, 15(10), 2022. 
+## Title: Karima Echihabi, Panagiota Fatourou, Kostas Zoumpatianos, Themis Palpanas, and Houda Benbrahim. Hercules Against Data Series Similarity Search. PVLDB, 15(10), 2022. 
 
 ## Abstract: 
 
