@@ -1,2 +1,0 @@
-bin/siss --dataset /home/karima/Work/Research/Data/data_size1M_seed1184_len256_znorm.bin --dataset-size 1000000 --buffer-size 10000 --leaf-size 100 --ascii-input 0 --mode 0 --queries /home/karima/Work/Research/Data/queries_size100_seed14784_len256_znorm.bin --timeseries-size 256 --index-path /home/karima/Work/Research/Projects/SISS_full/code/siss/out/ --sims 1 --serial 1 --num-query-threads 3
-

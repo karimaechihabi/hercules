@@ -1,0 +1,667 @@
+//
+//  parallel_calc_utils.c
+//  parallel scan version
+//
+//  Created by Karima Echihabi on 18/01/2022
+
+
+
+#include "../config.h"
+#include "../globals.h"
+#include "../include/parallel_scan_utils.h"
+#include "math.h"
+#include "float.h"
+#include <pthread.h>
+
+/*
+void calculate_tlb(dataset,dataset_size,queries, queries_size, minimum_distance)
+{
+  
+}
+*/
+
+enum response parallel_scan(const char * dataset, int dataset_size,const char * queries, int queries_size, unsigned int ts_length, float minimum_distance, struct stats_info *stats, unsigned int k, int num_query_threads, int dbsize)
+{
+
+    RESET_PARTIAL_COUNTERS()
+    COUNT_PARTIAL_TIME_START
+      
+
+
+      
+    FILE * dataset_file; 
+    FILE * queries_file; 
+    file_position_type total_records;
+    file_position_type sz;
+       
+    COUNT_PARTIAL_RAND_INPUT
+    COUNT_PARTIAL_RAND_INPUT      
+    COUNT_PARTIAL_INPUT_TIME_START    
+    dataset_file = fopen (dataset,"rb");
+    queries_file = fopen (queries,"rb");
+    COUNT_PARTIAL_INPUT_TIME_END
+    
+    if (dataset_file == NULL) {
+     fprintf(stderr, "File %s not found!\n", dataset_file);
+      return FAILURE;
+    }
+
+    if (queries_file == NULL) {
+        fprintf(stderr, "File %s not found!\n", queries_file);
+        return FAILURE;
+    }
+    
+    COUNT_PARTIAL_RAND_INPUT
+    COUNT_PARTIAL_RAND_INPUT
+    COUNT_PARTIAL_INPUT_TIME_START
+    fseek(dataset_file, 0L, SEEK_END);
+    sz = (file_position_type) ftell(dataset_file);
+    fseek(dataset_file, 0L, SEEK_SET);
+    COUNT_PARTIAL_INPUT_TIME_END
+
+    total_records = sz/(ts_length * sizeof(ts_type));
+    
+    if (total_records < dataset_size) {
+        fprintf(stderr, "File %s has only %llu records!\n", dataset, total_records);
+        return FAILURE;
+    }
+
+    COUNT_PARTIAL_RAND_INPUT
+    COUNT_PARTIAL_RAND_INPUT
+    COUNT_PARTIAL_INPUT_TIME_START        
+    fseek(queries_file, 0L, SEEK_END);
+    sz = (file_position_type) ftell(queries_file);
+    fseek(queries_file, 0L, SEEK_SET);
+    COUNT_PARTIAL_INPUT_TIME_END
+      
+    
+    unsigned int ts_loaded = 0;    
+    unsigned int q_loaded = 0;
+        
+
+    ts_type * query_ts = malloc(sizeof(ts_type) * ts_length);
+
+    
+    if(query_ts == NULL)
+    {
+          fprintf(stderr,"Could not allocate memory for ts.\n");
+          return FAILURE;	
+    }
+    
+    struct query_result * knn_results = calloc(k,sizeof(struct query_result));
+    struct query_result result;
+    ts_type kth_bsf = FLT_MAX;
+    unsigned int cur_size = 0;
+    
+    while (q_loaded < queries_size)
+    {
+       //RESET_QUERY_COUNTERS ()
+
+             
+        COUNT_PARTIAL_SEQ_INPUT
+        COUNT_PARTIAL_INPUT_TIME_START	  
+   	fread(query_ts, sizeof(ts_type), ts_length, queries_file);
+        COUNT_PARTIAL_INPUT_TIME_END
+	  
+	for (int idx = 0; idx < k; ++idx)
+	{
+	    knn_results[idx].file_position = -1;
+	    knn_results[idx].distance = FLT_MAX;      
+	}
+
+	kth_bsf = FLT_MAX;
+
+        ts_type dist;
+	ts_loaded = 0;
+        int offset = 0;
+        int i;
+  	
+	int * query_order = malloc(sizeof(int) * ts_length);
+        if( query_order == NULL )
+           return FAILURE;
+
+	//reorder_query(query_ts,query_order,ts_length);
+         q_loaded++;
+
+         COUNT_PARTIAL_RAND_INPUT
+	 COUNT_PARTIAL_INPUT_TIME_START	  	
+	 fseek(dataset_file, 0L, SEEK_SET);
+         COUNT_PARTIAL_INPUT_TIME_END
+	   
+         parallel_scan_process_query(dataset_file, dataset_size,ts_length,query_ts, k, knn_results, num_query_threads, dbsize);
+        /*		
+	while (ts_loaded < dataset_size)
+        { 
+           COUNT_PARTIAL_SEQ_INPUT	  
+   	   COUNT_PARTIAL_INPUT_TIME_START	  		  
+           fread(candidate_ts, sizeof(ts_type), ts_length, dataset_file);
+           COUNT_PARTIAL_INPUT_TIME_END
+
+	   result =  knn_results[k-1];	   
+	   kth_bsf = result.distance;
+	     
+	   dist = ts_euclidean_distance_reordered(query_ts, candidate_ts, offset,ts_length, kth_bsf,query_order);
+	   
+           if (dist < kth_bsf)
+	   {
+	     struct query_result object_result;// =  malloc(sizeof(struct query_result));
+	     object_result.file_position = ts_loaded;
+	     object_result.distance =  dist;
+
+	     queue_bounded_sorted_insert(knn_results, object_result, &cur_size,k);
+
+	   }
+           ts_loaded++;
+        }
+
+	*/
+	
+	for (unsigned int idx = 1; idx <= k; ++idx)
+	{
+	    COUNT_PARTIAL_TIME_END	  
+	    result = knn_results[idx-1];
+	    update_query_stats(stats,q_loaded, idx, result);
+	    print_query_stats(stats, q_loaded, idx,queries);
+	    fflush(stdout);	    
+	    RESET_QUERY_COUNTERS()
+	    RESET_PARTIAL_COUNTERS()
+	    COUNT_PARTIAL_TIME_START	      
+	}
+	
+
+	
+        RESET_PARTIAL_COUNTERS()
+        COUNT_PARTIAL_TIME_START
+	  
+    }
+
+    free(knn_results);
+    free(query_ts);
+
+    COUNT_PARTIAL_INPUT_TIME_START
+    if(fclose(queries_file))
+    {   
+        fprintf(stderr, "Error in dstree_file_loaders.c: Could not close the query filename %s", queries);
+        return FAILURE;
+    }    
+    COUNT_PARTIAL_INPUT_TIME_END
+
+    COUNT_PARTIAL_INPUT_TIME_START
+    if(fclose(dataset_file))
+    {   
+        fprintf(stderr, "Error in dstree_file_loaders.c: Could not close the filename %s", dataset);
+        return FAILURE;
+    }
+    COUNT_PARTIAL_INPUT_TIME_END    
+
+      
+    COUNT_PARTIAL_TIME_END
+    RESET_PARTIAL_COUNTERS()
+
+    return SUCCESS;	
+ }
+
+
+enum response parallel_scan_process_query(FILE *ifile, file_position_type ts_num, unsigned int ts_length,
+					  ts_type *query_ts, unsigned int k,
+					  struct query_result * knn_results,
+					  unsigned int num_threads, unsigned int initial_db_size)
+
+{
+      
+    ts_type * ts = NULL;
+
+    file_position_type ts_loaded = 0;    
+
+    thread_data *input_data=malloc(sizeof(thread_data)*(num_threads-1)); 
+    pthread_t threadid[num_threads-1];
+
+    int j,conter=0;
+    int i;
+    int prev_flush_time=0,now_flush_time=0;
+
+    int curr_size = 0;
+    int sanity_counter=0;
+    
+    pthread_barrier_t DBarrier, lock_barrier3; //barrier1 is the double buffer barrier and barrier2 is the flush barrier
+    pthread_rwlock_t rwl_bsf=PTHREAD_RWLOCK_INITIALIZER;
+    pthread_mutex_t lock_bsf;
+    
+    pthread_mutex_init(&lock_bsf, NULL);
+    
+    pthread_barrier_init(&DBarrier, NULL, num_threads); //dbBarrier was barrier1
+    
+    int * db_size  = calloc(2,sizeof(int));
+    int * db_counter  = calloc(2,sizeof(int));
+    int * finished  = calloc(2,sizeof(int));            
+    db_size[0] = 0;
+    db_size[1] = 0;
+    db_counter[0] = 0;
+    db_counter[1] = 0;        
+    finished[0] = 0;
+    finished[1] = 0;
+    
+    int toggle = 0;
+
+    ts_type ** d_buffer = calloc(2,sizeof(ts_type*));
+    d_buffer[0] = calloc(initial_db_size* (num_threads-1), sizeof(ts_type)*ts_length);
+    d_buffer[1] = calloc(initial_db_size* (num_threads-1), sizeof(ts_type)*ts_length);
+
+    volatile int cnt = 0;
+    int global_counter = 0;
+    ts_type * candidate_ts = NULL;
+
+    candidate_ts = malloc (sizeof(ts_type) * ts_length);
+    
+    for (i = 0; i < (num_threads-1); i++)
+    {
+        input_data[i].DBarrier=&DBarrier;
+        input_data[i].finished=finished;
+	input_data[i].threads_data = input_data;
+	input_data[i].num_query_workers = num_threads-1;
+    	input_data[i].thread_id = i;
+        input_data[i].query_ts=query_ts;
+	input_data[i].knn_results =  knn_results;
+	input_data[i].k=k;
+	input_data[i].curr_k_size = &curr_size;
+
+	input_data[i].ts_length = ts_length;
+	input_data[i].lock_bsf=&lock_bsf;
+	input_data[i].rwl_bsf=&rwl_bsf;	
+
+	input_data[i].d_buffer = d_buffer;
+	input_data[i].db_size = db_size;
+	input_data[i].db_counter = db_counter;
+	input_data[i].toggle = toggle;
+	input_data[i].global_counter = &global_counter;	
+	
+    }
+
+    db_size[toggle] = min((int)initial_db_size, (int) ts_num) ;
+
+    
+    partial_seq_input_count += db_size[toggle]; 
+    COUNT_PARTIAL_SEQ_INPUT	  
+    COUNT_PARTIAL_INPUT_TIME_START	  		  
+    fread(d_buffer[toggle], sizeof(ts_type)*ts_length, db_size[toggle], ifile);
+    COUNT_PARTIAL_INPUT_TIME_END
+    
+    toggle = 1-toggle;
+    
+    for (j = 0; j < (num_threads-1); j++)
+    {
+	pthread_create(&(threadid[j]),NULL,queryworker,(void*)&(input_data[j]));
+    }
+    for (i = db_size[1-toggle]; i < ts_num; i+=db_size[toggle])
+    {
+
+      db_size[toggle] = min(initial_db_size,ts_num - i);
+      //printf("reading %d series\n", db_size[toggle]*(num_threads-1));
+
+      COUNT_PARTIAL_SEQ_INPUT	  
+      partial_seq_input_count += db_size[toggle];
+      COUNT_PARTIAL_INPUT_TIME_START	
+      fread(d_buffer[toggle], sizeof(ts_type) *ts_length, db_size[toggle], ifile);
+      COUNT_PARTIAL_INPUT_TIME_END
+
+      db_counter[toggle] = 0;
+      toggle = 1 - toggle;      
+      //pthread_barrier_wait(&DBarrier);
+      //db_counter[toggle] = 0;
+      pthread_barrier_wait(&DBarrier);      
+    }
+
+    finished[toggle] = 1;
+    pthread_barrier_wait(&DBarrier);
+
+    /*
+    for (j = 0; j < (num_threads-1); j++)
+    {
+      input_data[j].finished=1;
+    }
+    */
+
+    //pthread_barrier_wait(&DBarrier);
+    for (j = 0; j < (num_threads-1); j++)
+    {
+      pthread_join(threadid[j],NULL);
+    }
+
+    pthread_mutex_destroy(&lock_bsf);
+    free (db_counter);
+    free(db_size);
+    free(input_data);
+    free(d_buffer[0]);
+    free(d_buffer[1]);    
+    free (d_buffer);
+    free (candidate_ts);
+    free(finished);
+    
+    pthread_barrier_destroy(&DBarrier);
+
+      //    COUNT_PARTIAL_TIME_END
+      
+    
+      return SUCCESS;      
+
+}
+
+ void* queryworker(void *transferdata)
+{
+    
+  int toggle = 0;
+  int pos = -1;
+  
+  int i,j;
+  int num_threads = ((thread_data*)transferdata)->num_query_workers;
+
+  unsigned int k = ((thread_data*)transferdata)->k;  
+  unsigned int *curr_size=((thread_data*)transferdata)->curr_k_size;
+  struct query_result *knn_results = (((thread_data*)transferdata)->knn_results);
+  ts_type kth_bsf=knn_results[k-1].distance;
+    
+  ts_type *query_ts=((thread_data*)transferdata)->query_ts;
+
+  unsigned int ts_length = ((thread_data*)transferdata)->ts_length;;
+    
+  double tS = 0;
+  double tE = 0;
+  struct timeval start_time;
+  struct timeval end_time;
+
+  ts_type distance;
+  ts_type *current_ts;
+  int global_counter;
+
+  //printf ("First at while  finished[%d] = %d \n", ((thread_data*)transferdata)->thread_id, toggle,((thread_data*)transferdata)->finished[toggle]);      
+  while(!  (((thread_data*)transferdata)->finished)[toggle]   )
+      //while(__sync_fetch_and_add(&(((thread_data*)transferdata)->finished),0 ) == 0)
+    {   
+       //printf ("Thread %d not finished, working with db_counter[%d] = %d \n", ((thread_data*)transferdata)->thread_id, toggle,((thread_data*)transferdata)->db_counter[toggle]);      
+
+      pos = __sync_fetch_and_add(&(((thread_data*)transferdata)->db_counter[toggle]),1 );
+      while (pos < __sync_fetch_and_add(&(((thread_data*)transferdata)->db_size[toggle]),0))
+      {
+	//printf ("Thread %d inserting series %d\n", ((thread_data*)transferdata)->thread_id, pos);
+	//global_counter = __sync_fetch_and_add((((thread_data*)transferdata)->global_counter),1);
+
+	//printf ("Thread %d inserting series %d\n", ((thread_data*)transferdata)->thread_id, global_counter);
+		
+	current_ts = ((ts_type*)(((thread_data*)transferdata)->d_buffer[toggle])+(pos*ts_length));
+	
+	
+	pthread_rwlock_rdlock(((thread_data*)transferdata)->rwl_bsf); 	  
+	kth_bsf= (((thread_data*)transferdata)->knn_results[k-1].distance); 
+	pthread_rwlock_unlock(((thread_data*)transferdata)->rwl_bsf); 
+        //printf ("current bsf is %g\n", kth_bsf);
+        #ifdef __SSE__
+	distance = ts_euclidean_distance_SIMD(query_ts,
+					      current_ts,
+					      ts_length,
+					      kth_bsf);
+	
+        #endif
+
+	if(distance < kth_bsf)  
+	    {
+	      struct query_result object_result;
+	      object_result.distance =  distance;
+	      //printf ("thread %d checking candidate series %d, ts[0] = %g,  distance = %g, current_bsf = %g\n",
+	      //	    ((thread_data*)transferdata)->thread_id, global_counter,current_ts[0],  sqrtf(distance), sqrt(kth_bsf));
+
+	      
+	      pthread_rwlock_wrlock(((thread_data*)transferdata)->rwl_bsf); 	  
+	      if (distance < (((thread_data*)transferdata)->knn_results[k-1].distance))
+		{
+		  queue_bounded_sorted_insert(knn_results, object_result,((thread_data*)transferdata)->curr_k_size, k);		  
+		}
+	      pthread_rwlock_unlock(((thread_data*)transferdata)->rwl_bsf); 	      
+	    }
+	      
+	  
+        pos = __sync_fetch_and_add(&(((thread_data*)transferdata)->db_counter[toggle]),1 );
+  	
+      }
+      pthread_barrier_wait(((thread_data*)transferdata)->DBarrier);
+      toggle = 1 - toggle;
+      //pthread_barrier_wait(((thread_data*)transferdata)->DBarrier);      
+    }  
+}
+      
+
+
+void queue_bounded_sorted_insert(struct  query_result *q, struct query_result d, unsigned int *cur_size, unsigned int k)
+{
+    struct query_result  temp;
+    size_t i;
+    size_t newsize;
+
+    bool is_duplicate = false;
+    for (unsigned int itr = 0 ; itr < *cur_size ; ++itr)
+      {
+	if (q[itr].distance == d.distance)
+	  is_duplicate = true;
+      }
+   
+    if (!is_duplicate)
+      {
+    
+	/* the queue is full, overwrite last element*/
+	if (*cur_size == k) {      
+	  q[k-1].distance = d.distance;
+	  q[k-1].file_position = d.file_position;
+	}
+	else
+	  {
+	    q[*cur_size].distance = d.distance;
+	    q[*cur_size].file_position = d.file_position;      
+	    ++(*cur_size);
+	  }
+
+	unsigned int idx,j;
+
+	idx = 1;
+    
+	while (idx < *cur_size)
+	  {
+	    j = idx;
+	    while ( j > 0 &&  ( (q[j-1]).distance > q[j].distance)) 
+	      {
+		temp = q[j];
+		q[j].distance = q[j-1].distance;
+		q[j].file_position = q[j-1].file_position;	
+		q[j-1].distance = temp.distance;
+		q[j-1].file_position = temp.file_position;		
+		--j;
+	      }
+	    ++idx;
+	  }
+      }
+
+}
+
+void update_query_stats(struct stats_info *stats,
+			unsigned int query_id,
+			unsigned int found_knn,
+			struct query_result bsf_result)
+{
+
+
+  stats->query_total_time  = partial_time;
+  stats->query_total_input_time  = partial_input_time;
+  stats->query_total_output_time = partial_output_time;
+  stats->query_total_cpu_time    = partial_time-partial_input_time-partial_output_time;
+
+  stats->query_total_seq_input_count   = partial_seq_input_count;
+  stats->query_total_seq_output_count  = partial_seq_output_count;
+  stats->query_total_rand_input_count  = partial_rand_input_count;
+  stats->query_total_rand_output_count = partial_rand_output_count;
+
+  stats->query_exact_distance = sqrtf(bsf_result.distance);
+  stats->query_exact_file_position = bsf_result.file_position;
+  
+}
+
+
+void print_query_stats(struct stats_info *stats, unsigned int query_num,unsigned int found_knn, char * queries)
+{
+
+        printf("Query_total_input_time_secs\t%lf\t%s\t%u\t%u\n",
+	       stats->query_total_input_time/1000000,	       
+	       queries,
+	       query_num,
+	       found_knn
+	     );
+
+        printf("Query_total_output_time_secs\t%lf\t%s\t%u\t%u\n",
+	       stats->query_total_output_time/1000000,	       
+	       queries,
+	       query_num,
+	       found_knn
+	     );
+
+        printf("Query_total_cpu_time_secs\t%lf\t%s\t%u\t%u\n",
+	       stats->query_total_cpu_time/1000000,	       
+	       queries,
+	       query_num,
+	       found_knn
+	     );
+	
+        printf("Query_total_time_secs\t%lf\t%s\t%u\t%u\n",
+	       stats->query_total_time/1000000,	       
+	       queries,
+	       query_num,
+	       found_knn
+	     );
+
+        printf("Query_total_seq_input_count\t%llu\t%s\t%u\t%u\n",
+	       stats->query_total_seq_input_count,
+	       queries,
+	       query_num,
+	       found_knn
+	       );
+	
+        printf("Query_total_seq_output_count\t%llu\t%s\t%u\t%u\n",
+	       stats->query_total_seq_output_count,
+	       queries,
+	       query_num,
+	       found_knn
+	       );
+	
+        printf("Query_total_rand_input_count\t%llu\t%s\t%u\t%u\n",
+	       stats->query_total_rand_input_count,
+	       queries,
+	       query_num,
+	       found_knn
+	       );
+	
+        printf("Query_total_rand_output_count\t%llu\t%s\t%u\t%u\n",
+	       stats->query_total_rand_output_count,
+	       queries,
+	       query_num,
+	       found_knn
+	       );
+
+
+        printf("Query_exact_distance\t%f\t%s\t%u\t%u\n",
+	       stats->query_exact_distance,
+	       queries,
+	       query_num,
+	       found_knn
+	       );
+
+        printf("Query_exact_file_position\t%f\t%s\t%u\t%u\n",
+	       stats->query_exact_file_position,
+	       queries,
+	       query_num,
+	       found_knn
+	       );		
+
+	
+}
+
+
+void init_parallel_scan_stats(struct stats_info * stats)
+{
+    stats = malloc(sizeof(struct stats_info));
+    if(stats == NULL) {
+        fprintf(stderr,"Error in dstree_index.c: Could not allocate memory for stats structure.\n");
+        return FAILURE;
+    }
+
+    
+    /*PER QUERY STATISTICS*/    
+
+    stats->query_total_input_time = 0;
+    stats->query_total_output_time = 0;
+    stats->query_total_load_node_time = 0;
+    stats->query_total_cpu_time = 0;
+    stats->query_total_time = 0;    
+
+    stats->query_total_seq_input_count = 0;
+    stats->query_total_seq_output_count = 0;
+    stats->query_total_rand_input_count = 0;
+    stats->query_total_rand_output_count = 0;
+    
+    stats->query_exact_distance = 0;
+    stats->query_exact_file_position = 0;    
+
+    stats->query_lb_distance = 0;
+
+    stats->query_tlb = 0;        
+        
+    return SUCCESS;
+}
+
+enum response reorder_query(ts_type * query_ts, int * query_order, int ts_length)
+{
+  
+        q_index *q_tmp = malloc(sizeof(q_index) * ts_length);
+        int i;
+	
+        if( q_tmp == NULL )
+	  return FAILURE;
+
+	for( i = 0 ; i < ts_length ; i++ )
+        {
+          q_tmp[i].value = query_ts[i];
+          q_tmp[i].index = i;
+        }
+	
+        qsort(q_tmp, ts_length, sizeof(q_index),znorm_comp);
+
+        for( i=0; i<ts_length; i++)
+        {
+	  query_ts[i] = q_tmp[i].value;
+          query_order[i] = q_tmp[i].index;
+        }
+        free(q_tmp);
+
+	return SUCCESS;
+}
+
+
+int znorm_comp(const void *a, const void* b)
+{
+    q_index* x = (q_index*)a;
+    q_index* y = (q_index*)b;
+
+    //    return abs(y->value) - abs(x->value);
+
+    if (fabsf(y->value) > fabsf(x->value) )
+       return 1;
+    else if (fabsf(y->value) == fabsf(x->value))
+      return 0;
+    else
+      return -1;
+}
+
+int max(int a, int b)
+{
+  return (a > b)? a : b;
+}
+
+int min(int a, int b)
+{
+  return (a < b)? a : b;
+}

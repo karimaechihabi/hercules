@@ -1,0 +1,28 @@
+This is the ads isax based time-series index.
+
+In order to install run the following commands:
+
+Our server use 5th generation intel Xeon CPU so that the CPU flug is broadwell. If you are using other type of CPU, please change the CPU flug in Makefile.am .
+
+./configure
+make
+
+and then run:
+
+./ads --help
+
+
+
+
+command example:
+
+index creation:
+./ads --dataset datafile --leaf-size 2000 --initial-lbl-size 2000 --index-path index-path --dataset-size 50000000 --flush-limit 1000000 --cpu-type 21 --function-type 1
+
+query answering:
+./ads --queries queryfile --use-index --index-path index-path --function-type 0 --serial --cpu-type 42 --queries-size 20
+
+
+
+topk query answering:
+./ads --queries queryfile --use-index --index-path index-path --function-type 0 --serial --cpu-type 42 --queries-size 20 -topk -k-size 10
