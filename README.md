@@ -13,28 +13,27 @@ In this paper, we propose Hercules, a parallel tree-based technique for exact si
 ## 2.1. Archive
 This archive contains detailed information required to reproduce the experimental results of the above paper.
 
-The archive contains the following 4 subdirectories:
+The archive contains the following 5 folders:
 
-### data
-The data subdirectory contains the datasets and queries used in the paper. 
+### code
+This folder contains the code of the Hercules index in addition to the code of the four baselines used in the experimental comparison, i.e., DSTree*, ParIS+, VA+file and PSCAN.
 
-All queries are contained in the archive.
-
-A script to download the real datasets can be found at hercules/experiments/data/real/download_real_data.sh. The script also provides the links to the google drive archives containing the datasets. 
-
-A script to generate the synthetic datasets and queries can be found at hercules/experiments/data/synthetic/generate_synthetic_data.sh.
-
-### tools
-The tools subdirectory contains the tools used by the archive to generate or download data.
+### data-queries
+The data-queries subdirectory contains the datasets and queries used in the paper.  All queries are contained in the archive. A script to download the real datasets can be found at hercules/data-queries/real/download_real_data.sh. The script also provides the links to the google drive archives containing the datasets. A script to generate the synthetic datasets and queries can be found at hercules/data-queries/synthetic/generate_synthetic_data.sh.
 
 ### experiments
-Upon publication of the paper, the experiments subdirectory will contain the following:
+This folder contains detailed instructions on how to reproduce the experiments in the published paper.
 
    <u>bin</u>: executables required to run the experiments (can be used as a back-box). \
    <u>config</u>: configurations to add to the .bashrc file. \
-   <u>logs</u>: stores the logs generated once experiments finish. \
    <u>scripts</u>: scripts used to automate experiments. \
    <u>workloads</u>: contains scripts to schedule experiments.
+
+### paper
+This folder contains the pdf of the Hercules manuscript. 
+
+### tools
+This folder contains the tools used by the archive to generate or download data.
 
 ## 2.2. Software Requirements
 Linux Ubuntu 16.04.2 \
@@ -57,9 +56,9 @@ sudo reboot
 
 ### Configure the Setup
 
-Run: chmod u+x hercules/experiments/tools/misc/give_x_rights.sh
+Run: chmod u+x hercules/tools/misc/give_x_rights.sh
 
-Then obtain execute rights on the scripts and binaries by running: hercules/experiments/tools/misc/give_x_rights.sh
+Then obtain execute rights on the scripts and binaries by running: hercules/tools/misc/give_x_rights.sh
 
 Configure your environment using the project.config file in hercules/experiments/config/ and modify the DATASETS and PROJECT_ROOT variables to point to the right path in your system.
 
@@ -72,9 +71,7 @@ Modify the workloads in hercules/experiments/workloads/ to specify which plots t
 
 Each workload file is standalone, and currently all experiments are commented out. Some workload files run the same experiment, please only uncomment this experiment once. For instance, fig6_workload.sh and fig9_workload.sh both build indexes, so the commands for building these indexes should be uncommented only for one of them (unless the indexes were deleted for space considerations).  
 
-Currently all commands are commented out. 
-
-Once the workloads are modified, run hercules/experiments/repro_paper.sh
+Once the workloads are modified, run hercules/repro_paper.sh
 
  
 
