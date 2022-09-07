@@ -17,7 +17,6 @@
 #include "hercules_query_engine.h"
 #include "calc_utils.h"
 
-enum response hercules_query_ascii_file(const char *ifilename, int q_num, const char delimiter, struct hercules_index *index, float minimum_distance, ts_type epsilon, ts_type delta);
 enum response hercules_query_binary_file(const char *ifilename, int q_num,
 				       struct hercules_index *index, float minimum_distance,
 				       ts_type epsilon, ts_type delta);  
@@ -29,11 +28,8 @@ enum response hercules_knn_query_binary_file(const char *ifilename, int q_num, s
 					   query_settings q_settings,
 					   int q_skip);
 enum response hercules_index_binary_file(const char *ifilename, file_position_type ts_num, struct hercules_index *index);
-enum response hercules_index_ascii_file(const char *ifilename, file_position_type ts_num, const char delimiter, struct hercules_index *index);
 enum response reorder_query(ts_type * query_ts, ts_type * query_ts_reordered, int * query_order, int ts_length);
-enum response hercules_tlb_binary_file(const char *ifilename, int q_num, struct hercules_index *index,float minimum_distance);
 enum response hercules_index_binary_file_p(const char *ifilename, file_position_type ts_num,
 					 struct hercules_index *index, int num_threads, int start_parallel);
-void* indexbulkloadingworker(void *transferdata);
 
 #endif

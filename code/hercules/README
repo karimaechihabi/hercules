@@ -1,0 +1,22 @@
+
+//  This is the README file for the Hercules implementation.
+
+--To compile and run, go to code directory: 
+
+-------------------DO ONCE TO SET UP ENVIRONMENT--------------------
+--Run 'aclocal' to generate an m4 environment for autotools to use:
+aclocal
+
+--Then run autoconf to turn our configure.ac into a configure script:
+autoconf
+
+--Then run automake to turn our Makefile.am into a Makefile.in:
+automake --add-missing
+
+
+-----------------------------COMPILE-------------------------------
+./configure
+make
+------------------------------RUN----------------------------------
+bin/hercules --help
+

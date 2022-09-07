@@ -25,8 +25,6 @@ enum response hercules_file_buffer_init(struct hercules_node *node)
     fprintf(stderr,"Error in hercules_file_buffer.c: Could not allocate memory for file buffer.\n");    
     return FAILURE;	
   }
-
-  //  node->file_buffer->filename = NULL;
   
   node->file_buffer->in_disk = false;
   node->file_buffer->disk_count = 0;
@@ -82,22 +80,12 @@ ts_type ** get_all_time_series_in_node(struct hercules_index * index, struct her
 		{   
 		  fprintf(stderr, "Error in hercules_file_buffer.c: Could not open"
 			  "the filename %s. Reason = %s\n", full_filename, strerror(errno));
-		  //return FAILURE;
 		}
-
-	    //in order to keep the same order that the data was inserted, we move the
-	    //time series that are in memory to allw the disk based time series to be
-	    //first in the buffer.
      
 	    for (int i=0; i<node->file_buffer->disk_count;++i ) 
 	      {       
-		//node->file_buffer->buffered_list[idx] = malloc(sizeof(ts_type) * ts_length);
 		ret[i] = calloc(ts_length, sizeof(ts_type));
-	    
-		//ret[i] = (ts_type *) index->buffer_manager->current_record;
-		//index->buffer_manager->current_record += sizeof(ts_type) * ts_length;
-		//index->buffer_manager->current_record_index++;
-	    
+	    	    
 		COUNT_PARTIAL_SEQ_INPUT
 		  COUNT_PARTIAL_INPUT_TIME_START      
 		  fread(ret[i],
@@ -109,7 +97,6 @@ ts_type ** get_all_time_series_in_node(struct hercules_index * index, struct her
 		{   
 		  fprintf(stderr, "Error in hercules_file_buffer.c: Could not close"
 			  "the filename %s. Reason= %s.\n", full_filename, strerror(errno));
-		  //return FAILURE;
 		} 
 	    COUNT_PARTIAL_INPUT_TIME_END    
 	      free(full_filename);
@@ -122,12 +109,7 @@ ts_type ** get_all_time_series_in_node(struct hercules_index * index, struct her
 
 	      for (int i=0; i< node->file_buffer->disk_count;++i ) 
 		{       
-		  //node->file_buffer->buffered_list[idx] = malloc(sizeof(ts_type) * ts_length);
 		  ret[i] = calloc(ts_length, sizeof(ts_type));
-	    
-		  //ret[i] = (ts_type *) index->buffer_manager->current_record;
-		  //index->buffer_manager->current_record += sizeof(ts_type) * ts_length;
-		  //index->buffer_manager->current_record_index++;
 	    
 		  COUNT_PARTIAL_SEQ_INPUT
 		    COUNT_PARTIAL_INPUT_TIME_START      
@@ -148,10 +130,6 @@ ts_type ** get_all_time_series_in_node(struct hercules_index * index, struct her
 		  ret[i+(node->file_buffer->disk_count)][j] = node->file_buffer->buffered_list[i][j];
 		}
 	    }
-  
-	  //this should be equal to old size + disk_count
-	  //node->file_buffer->buffered_list_size = idx+node->file_buffer->disk_count;
-
       
 
 	}
@@ -187,21 +165,19 @@ void * get_all_time_series_in_node_parallel(struct hercules_index * index, struc
   struct timeval start_time;
   struct timeval end_time;
  
-  //ret = calloc(max_leaf_size, sizeof(ts_type *));
   if (node->file_buffer != NULL)
     {
       if (node->file_buffer->disk_count > 0)
 	{
-          #if DETAILED_STATS == 1 
+#if DETAILED_STATS == 1 
 	  gettimeofday(&start_time, NULL);
-          #endif
+#endif
 
 
 	  if(node->filename == NULL)
 	    {   
 	      fprintf(stderr, "Error in hercules_file_buffer.c: This node has data on disk but"
 		      "could not get its filename.\n");
-	      //return FAILURE;
 	    }
       
 	  if (!serial){    
@@ -212,46 +188,25 @@ void * get_all_time_series_in_node_parallel(struct hercules_index * index, struc
 	    full_filename = strcat(full_filename, node->filename);
 	    full_filename = strcat(full_filename, "\0");
 	
-	    //COUNT_PARTIAL_RAND_INPUT
-	    //  COUNT_PARTIAL_INPUT_TIME_START
-	      FILE *ts_file = fopen(full_filename, "r");
-	      //COUNT_PARTIAL_INPUT_TIME_END
+            FILE *ts_file = fopen(full_filename, "r");
        
-	      if(ts_file == NULL)
-		{   
-		  fprintf(stderr, "Error in hercules_file_buffer.c: Could not open"
-			  "the filename %s. Reason = %s\n", full_filename, strerror(errno));
-		  //return FAILURE;
-		}
-
-	    //in order to keep the same order that the data was inserted, we move the
-	    //time series that are in memory to allw the disk based time series to be
-	    //first in the buffer.
-     
+	    if(ts_file == NULL)
+	      {   
+		fprintf(stderr, "Error in hercules_file_buffer.c: Could not open"
+			"the filename %s. Reason = %s\n", full_filename, strerror(errno));
+	      }
+	      
 	    for (int i=0; i<node->file_buffer->disk_count;++i ) 
 	      {       
-		//node->file_buffer->buffered_list[idx] = malloc(sizeof(ts_type) * ts_length);
-		//ret[i] = calloc(ts_length, sizeof(ts_type));
-	    
-		//ret[i] = (ts_type *) index->buffer_manager->current_record;
-		//index->buffer_manager->current_record += sizeof(ts_type) * ts_length;
-		//index->buffer_manager->current_record_index++;
-	    
-		//COUNT_PARTIAL_SEQ_INPUT
-		// COUNT_PARTIAL_INPUT_TIME_START      
-		  fread(ret[i],
-			sizeof(ts_type),ts_length, ts_file);
-		  //COUNT_PARTIAL_INPUT_TIME_END       
-		  }
-	    //COUNT_PARTIAL_INPUT_TIME_START
-	      if(fclose(ts_file))
-		{   
-		  fprintf(stderr, "Error in hercules_file_buffer.c: Could not close"
-			  "the filename %s. Reason= %s.\n", full_filename, strerror(errno));
-		  //return FAILURE;
-		} 
-	      //COUNT_PARTIAL_INPUT_TIME_END    
-	      free(full_filename);
+		fread(ret[i],
+		      sizeof(ts_type),ts_length, ts_file);
+	      }
+	    if (fclose(ts_file))
+	      {   
+		fprintf(stderr, "Error in hercules_file_buffer.c: Could not close"
+			"the filename %s. Reason= %s.\n", full_filename, strerror(errno));
+	      } 
+	    free(full_filename);
 	  }
 	  else
 	    {
@@ -261,12 +216,6 @@ void * get_all_time_series_in_node_parallel(struct hercules_index * index, struc
 	
 	      for (int i=0; i< node->file_buffer->disk_count;++i ) 
 		{       
-		  //node->file_buffer->buffered_list[idx] = malloc(sizeof(ts_type) * ts_length);
-		  //ret[i] = calloc(ts_length, sizeof(ts_type));
-	    
-		  //ret[i] = (ts_type *) index->buffer_manager->current_record;
-		  //index->buffer_manager->current_record += sizeof(ts_type) * ts_length;
-		  //index->buffer_manager->current_record_index++;
 	    
 		  COUNT_PARTIAL_SEQ_INPUT
 		    COUNT_PARTIAL_INPUT_TIME_START      
@@ -276,27 +225,23 @@ void * get_all_time_series_in_node_parallel(struct hercules_index * index, struc
 	      fclose(index->leaves_raw_file);
 	    }
 	  
-          #if DETAILED_STATS == 1
+#if DETAILED_STATS == 1
 	  gettimeofday(&end_time, NULL);
 	  tS = start_time.tv_sec*1000000 + (start_time.tv_usec);
 	  tE = end_time.tv_sec*1000000 + (end_time.tv_usec);
 	  ((index_thread_data*)tdata)->thread_split_input_time += (tE - tS);
 	  gettimeofday(&start_time, NULL); 
-          #endif       
+#endif       
   
 	  int idx = node->file_buffer->buffered_list_size;
  
 	  for (int i = 0 ; i < idx; ++i)
 	    {
-	      //ret[i+(node->file_buffer->disk_count)] = calloc(ts_length, sizeof(ts_type));
 	      for(int j=0; j<ts_length; ++j)
 		{
 		  ret[i+(node->file_buffer->disk_count)][j] = node->file_buffer->buffered_list[i][j];
 		}
 	    }
-  
-	  //this should be equal to old size + disk_count
-	  //node->file_buffer->buffered_list_size = idx+node->file_buffer->disk_count;
 	}
       else
 	{
@@ -304,7 +249,6 @@ void * get_all_time_series_in_node_parallel(struct hercules_index * index, struc
 
 	  for (int i = 0 ; i < idx; ++i)
 	    {
-	      //ret[i] = calloc(ts_length, sizeof(ts_type));
 	      for(int j=0; j<ts_length; ++j)
 		{
 		  ret[i][j] = node->file_buffer->buffered_list[i][j];
@@ -312,7 +256,6 @@ void * get_all_time_series_in_node_parallel(struct hercules_index * index, struc
 	    }    
 	}
     }
-  // return ret;
 }
 
 
@@ -348,7 +291,6 @@ enum response flush_buffer_to_disk(struct hercules_index *index, struct hercules
 	      {   
 		fprintf(stderr, "Error in hercules_file_buffer.c: Flushing node to disk.."
 			"Could not open the filename %s. Reason= %s\n", node->filename, strerror(errno));
-		//return FAILURE;
 		return SUCCESS;
 	      }
 
@@ -389,10 +331,9 @@ enum response flush_buffer_to_disk(struct hercules_index *index, struct hercules
 	  free(full_filename);
 	}
     }
-    return SUCCESS; 
+  return SUCCESS; 
     
 }
-//only difference so far with serial version is that the parallel version does not count OUTPUT TIME
 
 enum response flush_buffer_to_disk_parallel(struct hercules_index *index, struct hercules_node *node)
 {
@@ -416,28 +357,27 @@ enum response flush_buffer_to_disk_parallel(struct hercules_index *index, struct
 	  full_filename = strcat(full_filename, node->filename);
 	  full_filename = strcat(full_filename, "\0");
 
-	    FILE *ts_file = fopen(full_filename, "a");
+	  FILE *ts_file = fopen(full_filename, "a");
        
-	    if(ts_file == NULL)
-	      {   
-		fprintf(stderr, "Error in hercules_file_buffer.c: Flushing node to disk.."
-			"Could not open the filename %s. Reason= %s\n", node->filename, strerror(errno));
-		//return FAILURE;
-		return SUCCESS;
-	      }
+	  if(ts_file == NULL)
+	    {   
+	      fprintf(stderr, "Error in hercules_file_buffer.c: Flushing node to disk.."
+		      "Could not open the filename %s. Reason= %s\n", node->filename, strerror(errno));
+	      return SUCCESS;
+	    }
 
 	  int num_ts =  node->file_buffer->buffered_list_size;
 
-	    for (int idx = 0; idx < num_ts;++idx )
-	      {
-		  if(!fwrite(node->file_buffer->buffered_list[idx], sizeof(ts_type), index->settings->timeseries_size, ts_file))
-		    {   
-		      fprintf(stderr, "Error in hercules_file_buffer.c: Could not "
-			      "write the timeseries to file %s.\n", full_filename);
-		      return FAILURE;
-		    }
+	  for (int idx = 0; idx < num_ts;++idx )
+	    {
+	      if(!fwrite(node->file_buffer->buffered_list[idx], sizeof(ts_type), index->settings->timeseries_size, ts_file))
+		{   
+		  fprintf(stderr, "Error in hercules_file_buffer.c: Could not "
+			  "write the timeseries to file %s.\n", full_filename);
+		  return FAILURE;
+		}
 
-	      }
+	    }
 
 	  if(fclose(ts_file))
 	    {   
@@ -460,7 +400,7 @@ enum response flush_buffer_to_disk_parallel(struct hercules_index *index, struct
 	  free(full_filename);
 	}
     }
-    return SUCCESS; 
+  return SUCCESS; 
     
 }
 
@@ -468,22 +408,22 @@ enum response clear_file_buffer(struct hercules_index *index, struct hercules_no
 {
 
   if ((node->file_buffer) == NULL )
-  {
+    {
       fprintf(stderr, "Error in hercules_file_buffer.c: Cannot clear a NULL buffer.\n");
       return FAILURE;          
-  }
+    }
   else
-  {
+    {
       if (node->file_buffer->buffered_list != NULL)
-      {
-         free(node->file_buffer->buffered_list);
-      }
+	{
+	  free(node->file_buffer->buffered_list);
+	}
       
       node->file_buffer->buffered_list = NULL;
       node->file_buffer->buffered_list_size = 0;
- }
+    }
 
- return SUCCESS;  
+  return SUCCESS;  
 }
 
 
@@ -491,67 +431,66 @@ enum response delete_file_buffer(struct hercules_index * index,struct hercules_n
 {
   pthread_mutex_lock(&(index->buffer_manager->lock_file_map));    
   if (node->file_buffer->in_disk) //delete file if in disk
-  {    
-    //delete file from disk, return and error if not removed properly
-    int full_size = strlen(index->settings->root_directory) + strlen(node->filename)+1;
+    {    
+      int full_size = strlen(index->settings->root_directory) + strlen(node->filename)+1;
      
-    const char *full_filename = malloc(sizeof(char) * full_size);
-    full_filename = strcpy(full_filename, index->settings->root_directory);
-    full_filename = strcat(full_filename, node->filename);
-    full_filename = strcat(full_filename, "\0");
+      const char *full_filename = malloc(sizeof(char) * full_size);
+      full_filename = strcpy(full_filename, index->settings->root_directory);
+      full_filename = strcat(full_filename, node->filename);
+      full_filename = strcat(full_filename, "\0");
 
-    if(!remove(full_filename)) //file deleted successfully
-    {
-      node->file_buffer->disk_count = 0;
-      node->file_buffer->in_disk = false;
+      if(!remove(full_filename)) //file deleted successfully
+	{
+	  node->file_buffer->disk_count = 0;
+	  node->file_buffer->in_disk = false;
+	}
+      else 
+	{
+	  fprintf(stderr, "Error in hercules_file_buffer.c: Error deleting filename %s.\n", full_filename);
+	  return FAILURE;          
+	}
+      free(full_filename);  
     }
-    else 
-    {
-      fprintf(stderr, "Error in hercules_file_buffer.c: Error deleting filename %s.\n", full_filename);
-      return FAILURE;          
-    }
-    free(full_filename);  
-  }
   
-    struct hercules_file_map * res = node->file_buffer->position_in_map;
+  struct hercules_file_map * res = node->file_buffer->position_in_map;
     
-    if (res != NULL)
+  if (res != NULL)
     {
-       if (res->prev == NULL) //first element in file map 
-       { 
-         index->buffer_manager->file_map = res->next;
-         if(res->next != NULL) //deleting the first and there are others elements in map
-         {
-   	  res->next->prev = NULL;
-         }
-	 else  //deleting first and only element
-	 {
-	   index->buffer_manager->file_map_tail = NULL;
-	 }
-       }
-       else if (res->next == NULL) //deleting the last element in the map
-       {
-         res->prev->next = NULL;
-	 index->buffer_manager->file_map_tail = res->prev;   
-       }
-       else
-       {
-         res->prev->next = res->next;
-         res->next->prev = res->prev;      
-       }
+      if (res->prev == NULL) //first element in file map 
+	{ 
+	  index->buffer_manager->file_map = res->next;
+	  if(res->next != NULL) //deleting the first and there are others elements in map
+	    {
+	      res->next->prev = NULL;
+	    }
+	  else  //deleting first and only element
+	    {
+	      index->buffer_manager->file_map_tail = NULL;
+	    }
+	}
+      else if (res->next == NULL) //deleting the last element in the map
+	{
+	  res->prev->next = NULL;
+	  index->buffer_manager->file_map_tail = res->prev;   
+	}
+      else
+	{
+	  res->prev->next = res->next;
+	  res->next->prev = res->prev;      
+	}
 
-       free(res);
-       res = NULL;
-       --index->buffer_manager->file_map_size;
+      free(res);
+      res = NULL;
+      --index->buffer_manager->file_map_size;
     
-       if (!clear_file_buffer(index, node))
-       {
-         fprintf(stderr, "Error in hercules_file_buffer.c: Deleting node.. "
-                          "Could not clear the buffer for %s.\n", node->filename);
-         return FAILURE;      
-       }
+      if (!clear_file_buffer(index, node))
+	{
+	  fprintf(stderr, "Error in hercules_file_buffer.c: Deleting node.. "
+		  "Could not clear the buffer for %s.\n", node->filename);
+	  return FAILURE;      
+	}
 
-   }
+    }
 
   free(node->filename);
   node->filename = NULL;  
@@ -567,27 +506,26 @@ enum response delete_file_buffer_parallel(struct hercules_index * index,struct h
 {
 
   if (node->file_buffer->in_disk) //delete file if in disk
-  {    
-    //delete file from disk, return and error if not removed properly
-    int full_size = strlen(index->settings->root_directory) + strlen(node->filename)+1;
+    {    
+      int full_size = strlen(index->settings->root_directory) + strlen(node->filename)+1;
      
-    const char *full_filename = malloc(sizeof(char) * full_size);
-    full_filename = strcpy(full_filename, index->settings->root_directory);
-    full_filename = strcat(full_filename, node->filename);
-    full_filename = strcat(full_filename, "\0");
+      const char *full_filename = malloc(sizeof(char) * full_size);
+      full_filename = strcpy(full_filename, index->settings->root_directory);
+      full_filename = strcat(full_filename, node->filename);
+      full_filename = strcat(full_filename, "\0");
 
-    if(!remove(full_filename)) //file deleted successfully
-    {
-      node->file_buffer->disk_count = 0;
-      node->file_buffer->in_disk = false;
+      if(!remove(full_filename)) //file deleted successfully
+	{
+	  node->file_buffer->disk_count = 0;
+	  node->file_buffer->in_disk = false;
+	}
+      else 
+	{
+	  fprintf(stderr, "Error in hercules_file_buffer.c: Error deleting filename %s.\n", full_filename);
+	  return FAILURE;          
+	}
+      free(full_filename);  
     }
-    else 
-    {
-      fprintf(stderr, "Error in hercules_file_buffer.c: Error deleting filename %s.\n", full_filename);
-      return FAILURE;          
-    }
-    free(full_filename);  
-  }
 
   free(node->filename);
   node->filename = NULL;  
@@ -597,204 +535,140 @@ enum response delete_file_buffer_parallel(struct hercules_index * index,struct h
 
   return SUCCESS;  
 }
-/*
-enum response flush_leaf_to_leaves_file(struct hercules_index *index, struct hercules_node *node, int sims)
-{
 
-    ts_type ** ts_list;
-
-    unsigned int num_segments = index->settings->paa_segments;    
-    sax_type *sax = NULL;
-    sax = malloc(sizeof(sax_type) * num_segments);
-
-    ts_list = get_all_time_series_in_node(index, node,0);
-
-    //COUNT_PARTIAL_OUTPUT_TIME_START
-    // ++index->leaves_approx_pos;       
-    for (int idx=0; idx < node->node_size;++idx)
-    {
-       COUNT_PARTIAL_SEQ_OUTPUT
-
-       COUNT_PARTIAL_OUTPUT_TIME_START
-       fwrite(ts_list[idx], sizeof(ts_type), index->settings->timeseries_size, index->leaves_raw_file);
-	   COUNT_PARTIAL_OUTPUT_TIME_END
-
-       ++index->leaves_raw_pos;
-       if (sims)
-	 {
-	   sax_from_ts(ts_list[idx], sax, index->settings->ts_values_per_paa_segment,
-		       index->settings->paa_segments, index->settings->sax_alphabet_cardinality,
-		       index->settings->sax_bit_cardinality);
-       COUNT_PARTIAL_OUTPUT_TIME_START
-	   fwrite(sax, sizeof(sax_type), num_segments, index->leaves_sims_file);       
-       COUNT_PARTIAL_OUTPUT_TIME_END
-	 }
-    }
-
-//   COUNT_PARTIAL_OUTPUT_TIME_END
-  
-    for (int i = 0 ; i < index->settings->max_leaf_size; ++i)
-    {
-       free(ts_list[i]);
-
-    free(ts_list);
-    free(sax);
-    
-    return SUCCESS; 
-    
-}
-*/
 enum response flush_leaf_to_leaves_file_update_stats_serial(struct hercules_index *index, struct hercules_node *node, int sims)
 {
 
-    ts_type ** ts_list;
+  ts_type ** ts_list;
 
-    unsigned int num_segments = index->settings->paa_segments;    
-    sax_type *sax = NULL;
-    sax = malloc(sizeof(sax_type) * num_segments);
+  unsigned int num_segments = index->settings->paa_segments;    
+  sax_type *sax = NULL;
+  sax = malloc(sizeof(sax_type) * num_segments);
 
-    ts_list = get_all_time_series_in_node(index, node,0);
+  ts_list = get_all_time_series_in_node(index, node,0);
 
-    // ++index->leaves_approx_pos;       
-    //COUNT_PARTIAL_OUTPUT_TIME_START
-    for (int idx=0; idx < node->node_size;++idx)
+  for (int idx=0; idx < node->node_size;++idx)
     {
-       COUNT_PARTIAL_SEQ_OUTPUT
-	   COUNT_PARTIAL_OUTPUT_TIME_START
-       fwrite(ts_list[idx], sizeof(ts_type), index->settings->timeseries_size, index->leaves_raw_file);
-	   COUNT_PARTIAL_OUTPUT_TIME_END
-       ++index->leaves_raw_pos;
-       if (sims)
-	 {
-	   sax_from_ts(ts_list[idx], sax, index->settings->ts_values_per_paa_segment,
-		       index->settings->paa_segments, index->settings->sax_alphabet_cardinality,
-		       index->settings->sax_bit_cardinality);
-	   COUNT_PARTIAL_OUTPUT_TIME_START
-	   fwrite(sax, sizeof(sax_type), num_segments, index->leaves_sims_file);	   
-	   COUNT_PARTIAL_OUTPUT_TIME_END
-	 }
+      COUNT_PARTIAL_SEQ_OUTPUT
+	COUNT_PARTIAL_OUTPUT_TIME_START
+	fwrite(ts_list[idx], sizeof(ts_type), index->settings->timeseries_size, index->leaves_raw_file);
+      COUNT_PARTIAL_OUTPUT_TIME_END
+	++index->leaves_raw_pos;
+      if (sims)
+	{
+	  sax_from_ts(ts_list[idx], sax, index->settings->ts_values_per_paa_segment,
+		      index->settings->paa_segments, index->settings->sax_alphabet_cardinality,
+		      index->settings->sax_bit_cardinality);
+	  COUNT_PARTIAL_OUTPUT_TIME_START
+	    fwrite(sax, sizeof(sax_type), num_segments, index->leaves_sims_file);	   
+	  COUNT_PARTIAL_OUTPUT_TIME_END
+	    }
 
-       //update_node_statistics_parallel(node->parent,ts_list[idx]);
-       //update the stats of the internal nodes
-       //no need to update the horizontal segments as they were needed only for splits
-
-       //if (node->split_segment != -1)
-       update_node_ancestors_statistics_for_split_segment(node, ts_list[idx]);       
-       
-       //get_node_ancestors_statistics(node,ts_list[idx]);              
+      update_node_ancestors_statistics_for_split_segment(node, ts_list[idx]);       
     }
 
-   update_node_ancestors_statistics_for_non_split_segments(node);       
+  update_node_ancestors_statistics_for_non_split_segments(node);       
 
-   //COUNT_PARTIAL_OUTPUT_TIME_END
   
-    for (int i = 0 ; i < index->settings->max_leaf_size; ++i)
+  for (int i = 0 ; i < index->settings->max_leaf_size; ++i)
     {
-       free(ts_list[i]);
+      free(ts_list[i]);
     }
 
-    free(ts_list);
-    free(sax);
+  free(ts_list);
+  free(sax);
     
-    return SUCCESS; 
+  return SUCCESS; 
     
 }
-
-/*NEED TO CHANGE THIS TO HAVE THE COORDINATOR READ ALL FILES, PUT THEM IN HARDBUFFER LET THREADS PROCESS THEN WRITE TO LEAVES FILE */
-
-
-
-
-
-
 
 
 enum response hercules_index_flush_leaves(struct hercules_index *index, int num_threads)
 {
 
-        unsigned int max_leaf_size = index->settings->max_leaf_size;
-        int sanity_counter= 1;
-        int fin_number= index->stats->leaf_nodes_count;
-        int i;
+  unsigned int max_leaf_size = index->settings->max_leaf_size;
+  int sanity_counter= 1;
+  int fin_number= index->stats->leaf_nodes_count;
+  int i;
  
          
-        index_thread_data *input_data=malloc(sizeof(index_thread_data)*(num_threads-1));
+  index_thread_data *input_data=malloc(sizeof(index_thread_data)*(num_threads-1));
 
- 	    pthread_t threadid[num_threads-1];
-        pthread_barrier_t flush_barrier;
-        pthread_barrier_init(&flush_barrier, NULL, num_threads); 
+  pthread_t threadid[num_threads-1];
+  pthread_barrier_t flush_barrier;
+  pthread_barrier_init(&flush_barrier, NULL, num_threads); 
        
-       fseek( index->leaves_raw_file, 0, SEEK_SET);
-       fseek( index->leaves_sims_file, 0, SEEK_SET);
+  fseek( index->leaves_raw_file, 0, SEEK_SET);
+  fseek( index->leaves_sims_file, 0, SEEK_SET);
 
 
-       for (i = 0; i < (num_threads-1); i++)
-       {
-         input_data[i].index=index;
-         input_data[i].flush_barrier=&flush_barrier;
-         input_data[i].finished=false;
-         input_data[i].fin_number=fin_number;
-         input_data[i].sanity_counter=&sanity_counter;
-         input_data[i].threads_data = input_data;
-     	 input_data[i].thread_id = i;
-       	 input_data[i].node_sax_data = calloc(max_leaf_size, sizeof(sax_type *));
-       	 input_data[i].split_node_data = calloc(max_leaf_size, sizeof(ts_type *));
-     	 input_data[i].current_leaf = -1;
+  for (i = 0; i < (num_threads-1); i++)
+    {
+      input_data[i].index=index;
+      input_data[i].flush_barrier=&flush_barrier;
+      input_data[i].finished=false;
+      input_data[i].fin_number=fin_number;
+      input_data[i].sanity_counter=&sanity_counter;
+      input_data[i].threads_data = input_data;
+      input_data[i].thread_id = i;
+      input_data[i].node_sax_data = calloc(max_leaf_size, sizeof(sax_type *));
+      input_data[i].split_node_data = calloc(max_leaf_size, sizeof(ts_type *));
+      input_data[i].current_leaf = -1;
 
-     	 for (int j =0; j < max_leaf_size ; ++j)
-  	     { 
-  	        input_data[i].node_sax_data[j] =  calloc(index->settings->paa_segments, sizeof(sax_type));
-   	        input_data[i].split_node_data[j] =  calloc(index->settings->timeseries_size, sizeof(ts_type));
- 	     }
-       }
+      for (int j =0; j < max_leaf_size ; ++j)
+	{ 
+	  input_data[i].node_sax_data[j] =  calloc(index->settings->paa_segments, sizeof(sax_type));
+	  input_data[i].split_node_data[j] =  calloc(index->settings->timeseries_size, sizeof(ts_type));
+	}
+    }
 
-       for (i = 0; i < (num_threads-1); i++)
-	   {
-            pthread_create(&(threadid[i]),NULL,hercules_index_flush_leaf_worker,(void*)&(input_data[i]));
-	   }
+  for (i = 0; i < (num_threads-1); i++)
+    {
+      pthread_create(&(threadid[i]),NULL,hercules_index_flush_leaf_worker,(void*)&(input_data[i]));
+    }
        
        
-       for (int i =0; i< fin_number;++i)
-       {
-          while (1)
-          {  
-           if (__sync_fetch_and_add(&(index->leaves[i]->proc_finished),0)){
-    			COUNT_PARTIAL_OUTPUT_TIME_START
-                for (int idx =0; idx < index->leaves[i]->node_size;++idx)
-                 {
-   			       fwrite(input_data[index->leaves[i]->thread_id].split_node_data[idx], 
-                       sizeof(ts_type), index->settings->timeseries_size, index->leaves_raw_file);
-                   fwrite(input_data[index->leaves[i]->thread_id].node_sax_data[idx], 
-                       sizeof(sax_type), index->settings->paa_segments, index->leaves_sims_file);
-                 } 
+  for (int i =0; i< fin_number;++i)
+    {
+      while (1)
+	{  
+	  if (__sync_fetch_and_add(&(index->leaves[i]->proc_finished),0)){
+	    COUNT_PARTIAL_OUTPUT_TIME_START
+	      for (int idx =0; idx < index->leaves[i]->node_size;++idx)
+		{
+		  fwrite(input_data[index->leaves[i]->thread_id].split_node_data[idx], 
+			 sizeof(ts_type), index->settings->timeseries_size, index->leaves_raw_file);
+		  fwrite(input_data[index->leaves[i]->thread_id].node_sax_data[idx], 
+			 sizeof(sax_type), index->settings->paa_segments, index->leaves_sims_file);
+		} 
 
-				COUNT_PARTIAL_OUTPUT_TIME_END
-		        __sync_fetch_and_add(&(index->leaves[i]->write_finished),1);
-                break;
-           }
+	    COUNT_PARTIAL_OUTPUT_TIME_END
+	      __sync_fetch_and_add(&(index->leaves[i]->write_finished),1);
+	    break;
+	  }
 
-          }
-       }
+	}
+    }
        
-       pthread_barrier_wait(&flush_barrier);
+  pthread_barrier_wait(&flush_barrier);
 
-        for (i = 0; i < (num_threads-1); i++)
-        {
-           	 for (int j =0; j < max_leaf_size ; ++j)
-  	         { 
-  	            free(input_data[i].node_sax_data[j]);
-  	            free(input_data[i].split_node_data[j]);
- 	         }
+  for (i = 0; i < (num_threads-1); i++)
+    {
+      for (int j =0; j < max_leaf_size ; ++j)
+	{ 
+	  free(input_data[i].node_sax_data[j]);
+	  free(input_data[i].split_node_data[j]);
+	}
       
-            free(input_data[i].node_sax_data);
-            free(input_data[i].split_node_data);
+      free(input_data[i].node_sax_data);
+      free(input_data[i].split_node_data);
 
-            pthread_join(threadid[i],NULL);
-        }
+      pthread_join(threadid[i],NULL);
+    }
 
-    free(input_data);
+  free(input_data);
 
-    pthread_barrier_destroy(&flush_barrier);
+  pthread_barrier_destroy(&flush_barrier);
 
 }
 
@@ -802,20 +676,19 @@ void * hercules_index_flush_leaf_worker(void *transferdata)
 {
 
 
-    int num_leaves = ((index_thread_data*)transferdata)->fin_number;
-    //int num_threads = ((index_thread_data*)transferdata)->num_threads;
-    int thread_id = ((index_thread_data*)transferdata)->thread_id;
-    struct hercules_index * index = ((index_thread_data*)transferdata)->index;
-    struct hercules_node * node = NULL;
+  int num_leaves = ((index_thread_data*)transferdata)->fin_number;
+  int thread_id = ((index_thread_data*)transferdata)->thread_id;
+  struct hercules_index * index = ((index_thread_data*)transferdata)->index;
+  struct hercules_node * node = NULL;
 
-    int current_leaf;
-    int cnt = 0;
+  int current_leaf;
+  int cnt = 0;
 
-    while (1)
+  while (1)
     {
       ((index_thread_data*)transferdata)->current_leaf = __sync_fetch_and_add(((index_thread_data*)transferdata)->sanity_counter,1) - 1 ; 
       if( ((index_thread_data*)transferdata)->current_leaf   >= num_leaves){
-   	        break;
+	break;
       }	    
       node =   index->leaves[((index_thread_data*)transferdata)->current_leaf];
       index->leaves[((index_thread_data*)transferdata)->current_leaf]->thread_id = thread_id;
@@ -824,16 +697,16 @@ void * hercules_index_flush_leaf_worker(void *transferdata)
       __sync_fetch_and_add(&(node->proc_finished),1);
 
       while (1)
-      {  
+	{  
 
-           if (__sync_fetch_and_add(&(node->write_finished),0)){
-              break;
-           }
-      }
+	  if (__sync_fetch_and_add(&(node->write_finished),0)){
+	    break;
+	  }
+	}
       
 
     }
-    pthread_barrier_wait((((index_thread_data*)transferdata)->flush_barrier));
+  pthread_barrier_wait((((index_thread_data*)transferdata)->flush_barrier));
 
 }
 

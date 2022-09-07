@@ -29,8 +29,7 @@ int compare(const void *a, const void *b)
 {
     float * c = (float *) b - 1;
     if (*(float*)a>*(float*)c && *(float*)a<=*(float*)b) {
-        //printf("Found %lf between %lf and %lf\n",*(float*)a,*(float*)c,*(float*)b);
-        return 0;
+      return 0;
     }
     else if (*(float*)a<=*(float*)c) {
         return -1;
@@ -230,15 +229,6 @@ ts_type minidist_paa_to_isax(ts_type *paa, sax_type *sax,
         {
             breakpoint_upper = sax_breakpoints[offset + region_upper];
         }
-        //printf("\n%d.%d is from %d to %d, %lf - %lf\n", v, c_c, region_lower, region_upper,
-        //       breakpoint_lower, breakpoint_upper);
-
-        //printf("FROM: \n");
-        //sax_print(&region_lower, 1, c_m);
-        //printf("TO: \n");
-        //sax_print(&region_upper, 1, c_m);
-		
-		//printf ("\n---------\n");
         
         if (breakpoint_lower > paa[i]) {
             distance += pow(breakpoint_lower - paa[i], 2);
@@ -246,9 +236,6 @@ ts_type minidist_paa_to_isax(ts_type *paa, sax_type *sax,
         else if(breakpoint_upper < paa[i]) {
             distance += pow(breakpoint_upper - paa[i], 2);
         }
-//        else {
-//            printf("%lf is between: %lf and %lf\n", paa[i], breakpoint_lower, breakpoint_upper);
-//        }
     }
     
     //distance = ratio_sqrt * sqrtf(distance);
@@ -271,9 +258,6 @@ ts_type minidist_paa_to_isax_raw(ts_type *paa, sax_type *sax,
    
     ts_type distance = 0;
 
-    /*REMOVE THIS AFTER CHECKING WHY RATIO_SQRT BECOMES 0 AFTER BEING PASSED TO FUNCTION*/
-    
-    // TODO: Store offset in index settings. and pass index settings as parameter.
     
     int offset = ((max_cardinality - 1) * (max_cardinality - 2)) / 2;
     
@@ -288,7 +272,6 @@ ts_type minidist_paa_to_isax_raw(ts_type *paa, sax_type *sax,
         
         sax_type region_lower = (v >> (c_m - c_c)) <<  (c_m - c_c);
         sax_type region_upper = (~((int)MAXFLOAT << (c_m - c_c)) | region_lower);
-		//printf("[%d, %d] %d -- %d\n", sax[i], c_c, region_lower, region_upper);
 
         float breakpoint_lower = 0; // <-- TODO: calculate breakpoints.
         float breakpoint_upper = 0; // <-- - || -
@@ -309,15 +292,6 @@ ts_type minidist_paa_to_isax_raw(ts_type *paa, sax_type *sax,
             breakpoint_upper = sax_breakpoints[offset + region_upper];
         }
 
-        //printf("\n%d.%d is from %d to %d, %lf - %lf\n", v, c_c, region_lower, region_upper,
-        //       breakpoint_lower, breakpoint_upper);
-
-        //printf("FROM: \n");
-        //sax_print(&region_lower, 1, c_m);
-        //printf("TO: \n");
-        //sax_print(&region_upper, 1, c_m);
-		
-		//printf ("\n---------\n");
         
         if (breakpoint_lower > paa[i]) {
             distance += pow(breakpoint_lower - paa[i], 2);
@@ -325,9 +299,6 @@ ts_type minidist_paa_to_isax_raw(ts_type *paa, sax_type *sax,
         else if(breakpoint_upper < paa[i]) {
             distance += pow(breakpoint_upper - paa[i], 2);
         }
-//        else {
-//            printf("%lf is between: %lf and %lf\n", paa[i], breakpoint_lower, breakpoint_upper);
-//        }
     }
     
     //distance = ratio_sqrt * sqrtf(distance);
@@ -354,8 +325,6 @@ float   minidist_paa_to_isax_raw_SIMD(float *paa, sax_type *sax,
 
 
 
-        //__m256i c_cv_0 = _mm256_set_epi32 ( sax_cardinalities[7] , sax_cardinalities[6] ,sax_cardinalities[5] ,sax_cardinalities[4] , sax_cardinalities[3] ,sax_cardinalities[2] ,sax_cardinalities[1],sax_cardinalities[0]);  
-        //__m256i c_cv_1 = _mm256_set_epi32 ( sax_cardinalities[15], sax_cardinalities[14],sax_cardinalities[13],sax_cardinalities[12], sax_cardinalities[11],sax_cardinalities[10],sax_cardinalities[9],sax_cardinalities[8]);
         __m128i sax_cardinalitiesv8 = _mm_lddqu_si128 ((const void*)sax_cardinalities);
         __m256i sax_cardinalitiesv16= _mm256_cvtepu8_epi16 (sax_cardinalitiesv8);
         __m128i sax_cardinalitiesv16_0=_mm256_extractf128_si256 (sax_cardinalitiesv16,0);
@@ -363,8 +332,6 @@ float   minidist_paa_to_isax_raw_SIMD(float *paa, sax_type *sax,
         __m256i c_cv_0 = _mm256_cvtepu16_epi32 (sax_cardinalitiesv16_0);
         __m256i c_cv_1 = _mm256_cvtepu16_epi32 (sax_cardinalitiesv16_1);
 
-        //__m256i v_0    = _mm256_set_epi32 (sax[7],sax[6],sax[5],sax[4],sax[3],sax[2],sax[1],sax[0]);
-        //__m256i v_1    = _mm256_set_epi32 (sax[15],sax[14],sax[13],sax[12],sax[11],sax[10],sax[9],sax[8]);
         __m128i saxv8= _mm_lddqu_si128 ((const void*)sax);
         __m256i saxv16= _mm256_cvtepu8_epi16 (saxv8);
         __m128i saxv16_0 =_mm256_extractf128_si256 (saxv16,0);
@@ -377,8 +344,6 @@ float   minidist_paa_to_isax_raw_SIMD(float *paa, sax_type *sax,
         __m256i cm_ccv_0 = _mm256_sub_epi32 (c_m, c_cv_0);
         __m256i cm_ccv_1 = _mm256_sub_epi32 (c_m, c_cv_1);
 
-        //__m256i _mm256_set_epi32 (int e7, int e6, int e5, int e4, int e3, int e2, int e1, int e0)    
-        //  __m256i _mm256_set1_epi32 (int a)
         __m256i region_lowerv_0 = _mm256_srlv_epi32 (v_0, cm_ccv_0);
         __m256i region_lowerv_1 = _mm256_srlv_epi32 (v_1, cm_ccv_1);
         region_lowerv_0 =  _mm256_sllv_epi32 (region_lowerv_0, cm_ccv_0);
