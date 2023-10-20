@@ -20,3 +20,96 @@ make
 ------------------------------RUN----------------------------------
 bin/hercules --help
 
+bin/hercules --dataset full_path_of dataset  \n\n\
+            \t--dataset-size 1000000  \n\n\
+            \t--buffer-size 61440 \n\n\
+            \t--leaf-size 100000 \n\n\
+            \t--index-path full_path_of_index \n\n\
+            \t--timeseries-size 256 \n\n\
+            \t--serial 1 \n\n\
+            \t--sims 1 \n\n\
+            \t--num-threads 24 \n\n\
+            \t--flush-threshold 12 \n\n\
+            \t--num-write-threads 12 \n\n\
+            \t--initial-db-size 120000 \n\n\
+            \t--mode 0 \n\n\
+
+\t--bin/hercules --queries full_path_of queries \n\n\
+            \t--queries-size 100 \n\n\
+            \t--buffer-size 61440\n\n\
+            \t--index-path full_path_of_index\n\n\
+            \t--leaf-size 100000\n\n\
+            \t--timeseries-size 256\n\n\
+            \t--serial 1\n\n\
+            \t--sims 1\n\n\
+            \t--num-threads 24\n\n\
+            \t--num-read-threads 1\n\n\
+            \t--num-write-threads 12\n\n\
+            \t--initial-db-size 120000\n\n\
+            \t--mode 1\n\n\
+            \t--delta 1\n\n\
+            \t--epsilon 0\n\n\
+            \t--k 10\n\n\
+            \t--eapca-threshold 0.25\n\n\
+            \t--sax-threshold 0.9 \n\n\
+
+\tbin/hercules --dataset full_path_of dataset  \n\n\
+            \t--queries full_path_of queries \n\n\
+            \t--queries-size 100 \n\n\
+            \t--dataset-size 1000000  \n\n\
+            \t--buffer-size 61440 \n\n\
+            \t--leaf-size 100000 \n\n\
+            \t--index-path full_path_of_index \n\n\
+            \t--timeseries-size 256 \n\n\
+            \t--serial 1 \n\n\
+            \t--sims 1 \n\n\
+            \t--num-threads 24 \n\n\
+            \t--flush-threshold 12 \n\n\
+            \t--num-write-threads 12 \n\n\
+            \t--initial-db-size 120000 \n\n\
+            \t--delta 1\n\n\
+            \t--epsilon 0\n\n\
+            \t--k 10\n\n\
+            \t--eapca-threshold 0.25\n\n\
+            \t--sax-threshold 0.9 \n\n\
+            \t--mode 2 \n\n
+
+
+
+- buffer-size    The total size of RAM in MBs to use by the algorithm (should be less than 80% of total RAM)
+- epsilon        The distance approximation error. Set epsilon = 0 for exact search.
+- dataset        The full path to the file containing the data to be indexed
+- delta          The probability that epsilon is not exceeded. Set delta = 1 for exact and deterministic search. 
+- queries-size   The number of queries
+- track-bsf      The default is 0. Set to 1 to track the intermediate answers 
+- incremental    The default is 0. Set to 1 for incremental search.
+- track-pruning  The default is 0. Set to 1 to track the pruning during search.
+- all-mindists   The default is 0. Set to 1 to track all the lower-bounding distances.
+- k              The number of neighbors to retrieve during k-NN search.
+- leaf-size      The maximum number of data objects to store in one leaf.
+- max-policy     The default is 0. Set to 1 to sort the pqueue during search in descending value of LB. The default is ascending order.
+- dataset-hists  The file containing the data distribution information needed for delta-epsilon search where delta <1.
+- nprobes        The maximum number of leaves to search during ng-approximate search.
+- index-path     The full path to the index files.
+- queries        The full path to the binary file containing the queries.
+- serial         The default is 1. Set to 1 to build one file containing all the leaves data.
+- minimum-distance  The minimum distance for range search
+- timeseries-size   The length of the data series
+- sax-cardinality   Only set to change the default cardinality for the SAX summarization
+- paa-segments      Only set to change the number of segments to use for the SAX summarization
+- num-queues        The number of queues to use in parallel search
+- num-threads       The number of threads to use during index building or query answering
+- num-read-threads  The number of read threads for oversubcription during query answering (total threads = num-threads * num-read-threads). 
+- approx-stop-condition  The number of leaves to visit during approximate search.
+- mode              0 for indexing,1 for query answering and 2 for both
+- dataset-size      The number of candidate data objects 
+- sims              Set to use skip-sequential search during query answering
+- queries-skip      The number of queries to skip
+- flush-threshold   The number of threads that should have a full buffer before the flush coordinator issues the order to flush
+- num-write-threads The number of threads to use during index writing 
+- eapca-threshold   The EAPCA pruning threshold. 
+- sax-threshold     The SAX pruning threshold
+- initial-db-size   The size of the double buffer in terms of the number of data series
+
+
+
